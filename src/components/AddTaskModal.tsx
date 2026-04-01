@@ -1,33 +1,33 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
-import type { Task, TaskStatus, TaskPriority } from '@/data/mockData';
-import { GROUPS, ASSIGNEES, STATUS_LABELS, PRIORITY_LABELS } from '@/data/mockData';
+import type { Task, TaskStatus } from '@/data/mockData';
+import { ASSIGNEES, STATUS_LABELS, hoursToDays, initialTasks } from '@/data/mockData';
 
 interface AddTaskModalProps {
+  tasksCount: number;
   onAdd: (task: Task) => void;
   onClose: () => void;
 }
 
-export default function AddTaskModal({ onAdd, onClose }: AddTaskModalProps) {
+export default function AddTaskModal({ tasksCount, onAdd, onClose }: AddTaskModalProps) {
   const [data, setData] = useState<Partial<Task>>({
-    name: '',
-    group: GROUPS[0],
+    num: tasksCount + 1,
+    docName: '',
+    cipher: '',
     assignee: ASSIGNEES[0],
+    workName: '',
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+    hoursTotal: 8,
     status: 'planned',
-    priority: 'medium',
-    progress: 0,
-    budget: 0,
-    spent: 0,
     notes: '',
   });
 
   const set = (key: keyof Task, val: string | number) => setData(d => ({ ...d, [key]: val }));
 
   const handleAdd = () => {
-    if (!data.name) return;
+    if (!data.docName) return;
     onAdd({ ...data, id: `task-${Date.now()}` } as Task);
     onClose();
   };
@@ -42,71 +42,87 @@ export default function AddTaskModal({ onAdd, onClose }: AddTaskModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm animate-fade-in">
       <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-lg mx-4 animate-slide-up">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <h2 className="text-sm font-medium text-foreground">Новая задача</h2>
+          <div>
+            <h2 className="text-sm font-medium text-foreground">Новая запись</h2>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Позиция № {data.num}</p>
+          </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-muted">
             <Icon name="X" size={16} />
           </button>
         </div>
 
         <div className="p-5 space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2">
+              <Label>Наименование комплекта документации *</Label>
+              <input
+                className={inputCls}
+                placeholder="Например: Рабочая документация"
+                value={data.docName || ''}
+                onChange={e => set('docName', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Шифр</Label>
+              <input
+                className={inputCls}
+                placeholder="РД-001"
+                value={data.cipher || ''}
+                onChange={e => set('cipher', e.target.value)}
+              />
+            </div>
+          </div>
+
           <div>
-            <Label>Название задачи *</Label>
-            <input className={inputCls} placeholder="Введите название..." value={data.name || ''} onChange={e => set('name', e.target.value)} />
+            <Label>Наименование работ (задания)</Label>
+            <input
+              className={inputCls}
+              placeholder="Описание выполняемых работ..."
+              value={data.workName || ''}
+              onChange={e => set('workName', e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label>Исполнитель</Label>
+            <select className={inputCls} value={data.assignee} onChange={e => set('assignee', e.target.value)}>
+              {ASSIGNEES.map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Группа</Label>
-              <select className={inputCls} value={data.group} onChange={e => set('group', e.target.value)}>
-                {GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
-              </select>
-            </div>
-            <div>
-              <Label>Исполнитель</Label>
-              <select className={inputCls} value={data.assignee} onChange={e => set('assignee', e.target.value)}>
-                {ASSIGNEES.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Дата начала</Label>
+              <Label>Старт</Label>
               <input type="date" className={inputCls} value={data.startDate} onChange={e => set('startDate', e.target.value)} />
             </div>
             <div>
-              <Label>Дата окончания</Label>
+              <Label>Финиш</Label>
               <input type="date" className={inputCls} value={data.endDate} onChange={e => set('endDate', e.target.value)} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Статус</Label>
-              <select className={inputCls} value={data.status} onChange={e => set('status', e.target.value as TaskStatus)}>
-                {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
-            </div>
-            <div>
-              <Label>Приоритет</Label>
-              <select className={inputCls} value={data.priority} onChange={e => set('priority', e.target.value as TaskPriority)}>
-                {Object.entries(PRIORITY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <Label>Прогресс (%)</Label>
-              <input type="number" min="0" max="100" className={inputCls} value={data.progress ?? 0} onChange={e => set('progress', +e.target.value)} />
+              <Label>Трудозатраты ч/ч</Label>
+              <input
+                type="number"
+                min="1"
+                className={inputCls}
+                value={data.hoursTotal ?? 8}
+                onChange={e => set('hoursTotal', +e.target.value)}
+              />
             </div>
             <div>
-              <Label>Бюджет (₽)</Label>
-              <input type="number" className={inputCls} value={data.budget ?? 0} onChange={e => set('budget', +e.target.value)} />
+              <Label>Трудозатраты дни</Label>
+              <div className="h-8 flex items-center px-2.5 text-xs border border-border rounded bg-muted/50 text-muted-foreground mono">
+                {hoursToDays(data.hoursTotal ?? 0)}
+              </div>
             </div>
             <div>
-              <Label>Потрачено (₽)</Label>
-              <input type="number" className={inputCls} value={data.spent ?? 0} onChange={e => set('spent', +e.target.value)} />
+              <Label>Статус</Label>
+              <select className={inputCls} value={data.status} onChange={e => set('status', e.target.value as TaskStatus)}>
+                {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
             </div>
           </div>
 
@@ -124,9 +140,9 @@ export default function AddTaskModal({ onAdd, onClose }: AddTaskModalProps) {
 
         <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-border">
           <Button variant="outline" size="sm" onClick={onClose} className="text-xs">Отмена</Button>
-          <Button size="sm" onClick={handleAdd} disabled={!data.name} className="text-xs gap-2">
+          <Button size="sm" onClick={handleAdd} disabled={!data.docName} className="text-xs gap-2">
             <Icon name="Plus" size={13} />
-            Добавить задачу
+            Добавить
           </Button>
         </div>
       </div>

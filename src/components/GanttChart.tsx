@@ -15,13 +15,13 @@ const ZOOM_CONFIGS: Record<ZoomLevel, { label: string; days: number; colW: numbe
   quarter: { label: 'Кварталы', days: 90, colW: 120 },
 };
 
-const GROUP_COLORS: Record<string, string> = {};
-const KNOWN_GROUPS = ['Разработка', 'Дизайн', 'Маркетинг', 'Аналитика', 'Инфраструктура'];
-KNOWN_GROUPS.forEach((g, i) => { GROUP_COLORS[g] = GANTT_COLORS[i % GANTT_COLORS.length]; });
+const ASSIGNEE_COLORS: Record<string, string> = {};
 
-function getColor(group: string) {
-  if (!GROUP_COLORS[group]) GROUP_COLORS[group] = GANTT_COLORS[Object.keys(GROUP_COLORS).length % GANTT_COLORS.length];
-  return GROUP_COLORS[group];
+function getColor(assignee: string) {
+  if (!ASSIGNEE_COLORS[assignee]) {
+    ASSIGNEE_COLORS[assignee] = GANTT_COLORS[Object.keys(ASSIGNEE_COLORS).length % GANTT_COLORS.length];
+  }
+  return ASSIGNEE_COLORS[assignee];
 }
 
 export default function GanttChart({ tasks }: GanttChartProps) {
@@ -98,10 +98,10 @@ export default function GanttChart({ tasks }: GanttChartProps) {
         )}
 
         <div className="ml-auto flex items-center gap-3">
-          {KNOWN_GROUPS.map((g, i) => (
-            <div key={g} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: GANTT_COLORS[i] }} />
-              {g}
+          {tasks.slice(0, 5).map((t) => (
+            <div key={t.assignee} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: getColor(t.assignee) }} />
+              {t.assignee}
             </div>
           ))}
         </div>
@@ -110,7 +110,7 @@ export default function GanttChart({ tasks }: GanttChartProps) {
       <div className="flex flex-1 overflow-hidden">
         <div className="w-[200px] min-w-[200px] border-r border-border flex flex-col">
           <div className="h-10 border-b border-border px-3 flex items-center">
-            <span className="text-xs font-medium text-muted-foreground">Задача</span>
+            <span className="text-xs font-medium text-muted-foreground">Комплект / Шифр</span>
           </div>
           <div className="flex-1 overflow-y-auto scrollbar-thin">
             {tasks.map((task) => (
@@ -119,8 +119,11 @@ export default function GanttChart({ tasks }: GanttChartProps) {
                 className={`h-[36px] flex items-center px-3 border-b border-border/50 gap-2 cursor-pointer transition-colors ${compare.includes(task.id) ? 'bg-primary/5' : 'hover:bg-muted/30'}`}
                 onClick={() => toggleCompare(task.id)}
               >
-                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: getColor(task.group) }} />
-                <span className="text-xs truncate text-foreground">{task.name}</span>
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: getColor(task.assignee) }} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs truncate text-foreground">{task.docName}</div>
+                  <div className="text-[10px] text-muted-foreground mono">{task.cipher}</div>
+                </div>
                 {compare.includes(task.id) && <Icon name="Check" size={10} className="text-primary ml-auto flex-shrink-0" />}
               </div>
             ))}
@@ -162,23 +165,16 @@ export default function GanttChart({ tasks }: GanttChartProps) {
                       left: getOffset(task.startDate),
                       width: getWidth(task.startDate, task.endDate),
                       height: 20,
-                      backgroundColor: getColor(task.group),
+                      backgroundColor: getColor(task.assignee),
                       opacity: task.status === 'cancelled' ? 0.35 : 1,
                     }}
                     onMouseEnter={(e) => setTooltip({ task, x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setTooltip(null)}
                     onMouseMove={(e) => setTooltip(t => t ? { ...t, x: e.clientX, y: e.clientY } : null)}
                   >
-                    <div
-                      className="h-full rounded-l"
-                      style={{
-                        width: `${task.progress}%`,
-                        backgroundColor: 'rgba(0,0,0,0.2)',
-                      }}
-                    />
                     {getWidth(task.startDate, task.endDate) > 60 && (
                       <span className="absolute inset-0 flex items-center px-2 text-white text-[10px] font-medium truncate">
-                        {task.name}
+                        {task.cipher} — {task.docName}
                       </span>
                     )}
                   </div>
@@ -205,16 +201,17 @@ export default function GanttChart({ tasks }: GanttChartProps) {
           className="fixed z-50 bg-popover border border-border rounded-lg shadow-lg p-3 pointer-events-none animate-fade-in"
           style={{ left: tooltip.x + 12, top: tooltip.y - 80, minWidth: 200 }}
         >
-          <p className="text-sm font-medium text-foreground mb-1">{tooltip.task.name}</p>
+          <p className="text-xs font-semibold text-foreground mb-0.5">{tooltip.task.docName}</p>
+          <p className="text-[10px] mono text-primary mb-2">{tooltip.task.cipher}</p>
           <div className="space-y-1">
             <div className="flex gap-2 text-xs text-muted-foreground">
-              <span>Группа:</span><span className="text-foreground">{tooltip.task.group}</span>
+              <span>Исполнитель:</span><span className="text-foreground">{tooltip.task.assignee}</span>
             </div>
             <div className="flex gap-2 text-xs text-muted-foreground">
               <span>Статус:</span><span className="text-foreground">{STATUS_LABELS[tooltip.task.status]}</span>
             </div>
             <div className="flex gap-2 text-xs text-muted-foreground">
-              <span>Прогресс:</span><span className="text-foreground">{tooltip.task.progress}%</span>
+              <span>Трудозатраты:</span><span className="text-foreground">{tooltip.task.hoursTotal} ч/ч</span>
             </div>
             <div className="flex gap-2 text-xs text-muted-foreground">
               <span>{new Date(tooltip.task.startDate).toLocaleDateString('ru-RU')} → {new Date(tooltip.task.endDate).toLocaleDateString('ru-RU')}</span>

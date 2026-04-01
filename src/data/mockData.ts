@@ -1,18 +1,16 @@
 export type TaskStatus = 'planned' | 'in_progress' | 'done' | 'delayed' | 'cancelled';
-export type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
 
 export interface Task {
   id: string;
-  name: string;
-  group: string;
+  num: number;
+  docName: string;
+  cipher: string;
   assignee: string;
+  workName: string;
   startDate: string;
   endDate: string;
+  hoursTotal: number;
   status: TaskStatus;
-  priority: TaskPriority;
-  progress: number;
-  budget: number;
-  spent: number;
   notes?: string;
 }
 
@@ -32,13 +30,6 @@ export const STATUS_COLORS: Record<TaskStatus, string> = {
   cancelled: 'bg-gray-100 text-gray-500',
 };
 
-export const PRIORITY_LABELS: Record<TaskPriority, string> = {
-  low: 'Низкий',
-  medium: 'Средний',
-  high: 'Высокий',
-  critical: 'Критический',
-};
-
 export const GANTT_COLORS = [
   'hsl(215, 85%, 55%)',
   'hsl(162, 72%, 45%)',
@@ -48,28 +39,29 @@ export const GANTT_COLORS = [
   'hsl(195, 75%, 50%)',
 ];
 
-export const GROUPS = ['Разработка', 'Дизайн', 'Маркетинг', 'Аналитика', 'Инфраструктура'];
 export const ASSIGNEES = ['Иванов А.', 'Петрова М.', 'Сидоров К.', 'Козлова Е.', 'Новиков Д.'];
 
+export const hoursToDays = (hours: number) => +(hours / 8).toFixed(1);
+
 export const initialTasks: Task[] = [
-  { id: '1', name: 'Анализ требований', group: 'Аналитика', assignee: 'Козлова Е.', startDate: '2024-01-08', endDate: '2024-01-19', status: 'done', priority: 'high', progress: 100, budget: 120000, spent: 115000 },
-  { id: '2', name: 'Дизайн интерфейса', group: 'Дизайн', assignee: 'Петрова М.', startDate: '2024-01-15', endDate: '2024-02-09', status: 'done', priority: 'high', progress: 100, budget: 200000, spent: 195000 },
-  { id: '3', name: 'Разработка API', group: 'Разработка', assignee: 'Иванов А.', startDate: '2024-01-22', endDate: '2024-03-01', status: 'done', priority: 'critical', progress: 100, budget: 380000, spent: 362000 },
-  { id: '4', name: 'Frontend разработка', group: 'Разработка', assignee: 'Сидоров К.', startDate: '2024-02-05', endDate: '2024-03-22', status: 'in_progress', priority: 'critical', progress: 75, budget: 420000, spent: 318000 },
-  { id: '5', name: 'Рекламная кампания', group: 'Маркетинг', assignee: 'Новиков Д.', startDate: '2024-02-19', endDate: '2024-04-12', status: 'in_progress', priority: 'medium', progress: 40, budget: 550000, spent: 220000 },
-  { id: '6', name: 'Настройка серверов', group: 'Инфраструктура', assignee: 'Иванов А.', startDate: '2024-03-04', endDate: '2024-03-22', status: 'planned', priority: 'high', progress: 0, budget: 150000, spent: 0 },
-  { id: '7', name: 'Тестирование QA', group: 'Разработка', assignee: 'Козлова Е.', startDate: '2024-03-11', endDate: '2024-04-05', status: 'planned', priority: 'high', progress: 0, budget: 180000, spent: 0 },
-  { id: '8', name: 'SEO оптимизация', group: 'Маркетинг', assignee: 'Петрова М.', startDate: '2024-03-18', endDate: '2024-04-19', status: 'delayed', priority: 'medium', progress: 15, budget: 90000, spent: 14000, notes: 'Ожидаем данные от аналитики' },
-  { id: '9', name: 'Документация', group: 'Аналитика', assignee: 'Новиков Д.', startDate: '2024-03-25', endDate: '2024-04-26', status: 'planned', priority: 'low', progress: 0, budget: 60000, spent: 0 },
-  { id: '10', name: 'Запуск продукта', group: 'Маркетинг', assignee: 'Новиков Д.', startDate: '2024-04-15', endDate: '2024-04-30', status: 'planned', priority: 'critical', progress: 0, budget: 300000, spent: 0 },
+  { id: '1', num: 1, docName: 'Техническое задание', cipher: 'ТЗ-001', assignee: 'Козлова Е.', workName: 'Разработка технического задания', startDate: '2024-01-08', endDate: '2024-01-19', hoursTotal: 80, status: 'done' },
+  { id: '2', num: 2, docName: 'Эскизный проект', cipher: 'ЭП-001', assignee: 'Петрова М.', workName: 'Разработка эскизного проекта интерфейса', startDate: '2024-01-15', endDate: '2024-02-09', hoursTotal: 200, status: 'done' },
+  { id: '3', num: 3, docName: 'Архитектурная документация', cipher: 'АД-002', assignee: 'Иванов А.', workName: 'Проектирование архитектуры системы', startDate: '2024-01-22', endDate: '2024-03-01', hoursTotal: 320, status: 'done' },
+  { id: '4', num: 4, docName: 'Рабочая документация', cipher: 'РД-003', assignee: 'Сидоров К.', workName: 'Разработка фронтенд-модулей', startDate: '2024-02-05', endDate: '2024-03-22', hoursTotal: 480, status: 'in_progress', notes: 'Выполнено 75%' },
+  { id: '5', num: 5, docName: 'Маркетинговый план', cipher: 'МП-001', assignee: 'Новиков Д.', workName: 'Подготовка маркетинговой документации', startDate: '2024-02-19', endDate: '2024-04-12', hoursTotal: 160, status: 'in_progress' },
+  { id: '6', num: 6, docName: 'Инфраструктурный проект', cipher: 'ИП-001', assignee: 'Иванов А.', workName: 'Настройка и документирование серверной инфраструктуры', startDate: '2024-03-04', endDate: '2024-03-22', hoursTotal: 96, status: 'planned' },
+  { id: '7', num: 7, docName: 'Программа и методика испытаний', cipher: 'ПМИ-001', assignee: 'Козлова Е.', workName: 'Разработка программы и методики тестирования', startDate: '2024-03-11', endDate: '2024-04-05', hoursTotal: 120, status: 'planned' },
+  { id: '8', num: 8, docName: 'SEO-документация', cipher: 'СЕО-001', assignee: 'Петрова М.', workName: 'Оптимизация поисковой документации', startDate: '2024-03-18', endDate: '2024-04-19', hoursTotal: 64, status: 'delayed', notes: 'Ожидаем данные от аналитики' },
+  { id: '9', num: 9, docName: 'Руководство пользователя', cipher: 'РП-001', assignee: 'Новиков Д.', workName: 'Разработка руководства пользователя', startDate: '2024-03-25', endDate: '2024-04-26', hoursTotal: 80, status: 'planned' },
+  { id: '10', num: 10, docName: 'Акт о вводе в эксплуатацию', cipher: 'АВЭ-001', assignee: 'Новиков Д.', workName: 'Подготовка документов для ввода в эксплуатацию', startDate: '2024-04-15', endDate: '2024-04-30', hoursTotal: 40, status: 'planned' },
 ];
 
 export const historyItems = [
-  { id: 'h1', date: '2024-03-15 14:32', user: 'Иванов А.', action: 'Изменён статус задачи "Frontend разработка"', from: 'Запланировано', to: 'В работе' },
-  { id: 'h2', date: '2024-03-14 09:15', user: 'Козлова Е.', action: 'Обновлён прогресс задачи "Разработка API"', from: '85%', to: '100%' },
-  { id: 'h3', date: '2024-03-13 16:48', user: 'Петрова М.', action: 'Добавлена задача "SEO оптимизация"', from: '—', to: 'Задержка' },
-  { id: 'h4', date: '2024-03-12 11:20', user: 'Новиков Д.', action: 'Изменён бюджет "Рекламная кампания"', from: '450 000 ₽', to: '550 000 ₽' },
-  { id: 'h5', date: '2024-03-11 10:05', user: 'Сидоров К.', action: 'Изменён прогресс "Frontend разработка"', from: '60%', to: '75%' },
-  { id: 'h6', date: '2024-03-10 15:30', user: 'Козлова Е.', action: 'Добавлена задача "Тестирование QA"', from: '—', to: 'Запланировано' },
-  { id: 'h7', date: '2024-03-09 09:45', user: 'Иванов А.', action: 'Обновлены требования к серверам', from: 'Отменено', to: 'Запланировано' },
+  { id: 'h1', date: '2024-03-15 14:32', user: 'Иванов А.', action: 'Изменён статус "Рабочая документация" РД-003', from: 'Запланировано', to: 'В работе' },
+  { id: 'h2', date: '2024-03-14 09:15', user: 'Козлова Е.', action: 'Обновлены трудозатраты "Архитектурная документация"', from: '280 ч/ч', to: '320 ч/ч' },
+  { id: 'h3', date: '2024-03-13 16:48', user: 'Петрова М.', action: 'Добавлена "SEO-документация" СЕО-001', from: '—', to: 'Задержка' },
+  { id: 'h4', date: '2024-03-12 11:20', user: 'Новиков Д.', action: 'Изменён исполнитель "Маркетинговый план"', from: 'Козлова Е.', to: 'Новиков Д.' },
+  { id: 'h5', date: '2024-03-11 10:05', user: 'Сидоров К.', action: 'Обновлена дата финиша "Рабочая документация"', from: '2024-03-15', to: '2024-03-22' },
+  { id: 'h6', date: '2024-03-10 15:30', user: 'Козлова Е.', action: 'Добавлена "Программа и методика испытаний"', from: '—', to: 'Запланировано' },
+  { id: 'h7', date: '2024-03-09 09:45', user: 'Иванов А.', action: 'Восстановлена "Инфраструктурный проект" ИП-001', from: 'Отменено', to: 'Запланировано' },
 ];

@@ -2,15 +2,13 @@ import { useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { GROUPS, ASSIGNEES, STATUS_LABELS, PRIORITY_LABELS } from '@/data/mockData';
-import type { TaskStatus, TaskPriority } from '@/data/mockData';
+import { ASSIGNEES, STATUS_LABELS } from '@/data/mockData';
+import type { TaskStatus } from '@/data/mockData';
 
 export interface Filters {
   search: string;
-  group: string;
   assignee: string;
   status: TaskStatus | '';
-  priority: TaskPriority | '';
   dateFrom: string;
   dateTo: string;
 }
@@ -27,12 +25,9 @@ export default function FilterBar({ filters, onChange, onExport, onAddTask }: Fi
 
   const set = (key: keyof Filters, value: string) => onChange({ ...filters, [key]: value });
 
-  const activeCount = [
-    filters.group, filters.assignee, filters.status,
-    filters.priority, filters.dateFrom, filters.dateTo,
-  ].filter(Boolean).length;
+  const activeCount = [filters.assignee, filters.status, filters.dateFrom, filters.dateTo].filter(Boolean).length;
 
-  const reset = () => onChange({ search: '', group: '', assignee: '', status: '', priority: '', dateFrom: '', dateTo: '' });
+  const reset = () => onChange({ search: '', assignee: '', status: '', dateFrom: '', dateTo: '' });
 
   return (
     <div className="border-b border-border bg-card px-6 py-3">
@@ -40,10 +35,10 @@ export default function FilterBar({ filters, onChange, onExport, onAddTask }: Fi
         <div className="relative flex-1 max-w-sm">
           <Icon name="Search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Поиск задач..."
+            placeholder="Поиск по документации, шифру, работам..."
             value={filters.search}
             onChange={(e) => set('search', e.target.value)}
-            className="pl-8 h-8 text-sm bg-background"
+            className="pl-8 h-8 text-xs bg-background"
           />
         </div>
 
@@ -63,7 +58,7 @@ export default function FilterBar({ filters, onChange, onExport, onAddTask }: Fi
         </Button>
 
         {activeCount > 0 && (
-          <Button variant="ghost" size="sm" onClick={reset} className="h-8 text-xs text-muted-foreground">
+          <Button variant="ghost" size="sm" onClick={reset} className="h-8 text-xs text-muted-foreground gap-1">
             <Icon name="X" size={12} />
             Сбросить
           </Button>
@@ -72,26 +67,17 @@ export default function FilterBar({ filters, onChange, onExport, onAddTask }: Fi
         <div className="ml-auto flex gap-2">
           <Button variant="outline" size="sm" onClick={onExport} className="h-8 gap-2 text-xs">
             <Icon name="Download" size={13} />
-            Экспорт
+            Экспорт CSV
           </Button>
           <Button size="sm" onClick={onAddTask} className="h-8 gap-2 text-xs">
             <Icon name="Plus" size={13} />
-            Добавить задачу
+            Добавить запись
           </Button>
         </div>
       </div>
 
       {expanded && (
-        <div className="mt-3 flex flex-wrap gap-3 animate-fade-in">
-          <select
-            value={filters.group}
-            onChange={(e) => set('group', e.target.value)}
-            className="h-8 text-xs border border-border rounded px-2 bg-background text-foreground outline-none focus:ring-1 focus:ring-primary"
-          >
-            <option value="">Все группы</option>
-            {GROUPS.map((g) => <option key={g} value={g}>{g}</option>)}
-          </select>
-
+        <div className="mt-3 flex flex-wrap items-center gap-3 animate-fade-in">
           <select
             value={filters.assignee}
             onChange={(e) => set('assignee', e.target.value)}
@@ -108,15 +94,6 @@ export default function FilterBar({ filters, onChange, onExport, onAddTask }: Fi
           >
             <option value="">Все статусы</option>
             {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
-
-          <select
-            value={filters.priority}
-            onChange={(e) => set('priority', e.target.value)}
-            className="h-8 text-xs border border-border rounded px-2 bg-background text-foreground outline-none focus:ring-1 focus:ring-primary"
-          >
-            <option value="">Все приоритеты</option>
-            {Object.entries(PRIORITY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
 
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

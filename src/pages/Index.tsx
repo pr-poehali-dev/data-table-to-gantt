@@ -27,7 +27,7 @@ const DEFAULT_SETTINGS = {
 };
 
 const TAB_TITLES: Record<Tab, string> = {
-  table: 'Таблица задач',
+  table: 'Таблица документации',
   gantt: 'Диаграмма Ганта',
   history: 'История изменений',
   settings: 'Настройки',
@@ -37,7 +37,7 @@ export default function Index() {
   const [activeTab, setActiveTab] = useState<Tab>('table');
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [filters, setFilters] = useState<Filters>({
-    search: '', group: '', assignee: '', status: '', priority: '', dateFrom: '', dateTo: '',
+    search: '', assignee: '', status: '', dateFrom: '', dateTo: '',
   });
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -48,23 +48,22 @@ export default function Index() {
     const notes: string[] = [];
     if (settings.notifyDelay) {
       const delayed = updatedTasks.filter(t => t.status === 'delayed');
-      if (delayed.length > 0) notes.push(`${delayed.length} задач имеют задержку`);
-    }
-    if (settings.notifyBudget) {
-      const overBudget = updatedTasks.filter(t => t.budget > 0 && (t.spent / t.budget) * 100 >= settings.budgetThreshold);
-      if (overBudget.length > 0) notes.push(`${overBudget.length} задач превысили порог бюджета`);
+      if (delayed.length > 0) notes.push(`${delayed.length} позиций имеют задержку`);
     }
     setNotifications(notes);
   };
 
   const filteredTasks = useMemo(() => {
     return tasks.filter(t => {
-      if (filters.search && !t.name.toLowerCase().includes(filters.search.toLowerCase()) &&
-          !t.assignee.toLowerCase().includes(filters.search.toLowerCase())) return false;
-      if (filters.group && t.group !== filters.group) return false;
+      if (filters.search) {
+        const q = filters.search.toLowerCase();
+        if (!t.docName.toLowerCase().includes(q) &&
+            !t.cipher.toLowerCase().includes(q) &&
+            !t.workName.toLowerCase().includes(q) &&
+            !t.assignee.toLowerCase().includes(q)) return false;
+      }
       if (filters.assignee && t.assignee !== filters.assignee) return false;
       if (filters.status && t.status !== filters.status) return false;
-      if (filters.priority && t.priority !== filters.priority) return false;
       if (filters.dateFrom && t.endDate < filters.dateFrom) return false;
       if (filters.dateTo && t.startDate > filters.dateTo) return false;
       return true;
@@ -78,8 +77,7 @@ export default function Index() {
   };
 
   const handleDelete = (id: string) => {
-    const next = tasks.filter(t => t.id !== id);
-    setTasks(next);
+    setTasks(prev => prev.filter(t => t.id !== id));
   };
 
   const handleAdd = (task: Task) => {
@@ -89,17 +87,17 @@ export default function Index() {
   };
 
   const handleExport = () => {
-    const headers = ['Задача', 'Группа', 'Исполнитель', 'Начало', 'Конец', 'Статус', 'Приоритет', 'Прогресс', 'Бюджет', 'Потрачено'];
+    const headers = ['№', 'Комплект документации', 'Шифр', 'Исполнитель', 'Наименование работ', 'Старт', 'Финиш', 'Трудозатраты ч/ч', 'Трудозатраты дни', 'Статус'];
     const rows = filteredTasks.map(t => [
-      t.name, t.group, t.assignee, t.startDate, t.endDate,
-      t.status, t.priority, t.progress + '%', t.budget, t.spent,
+      t.num, t.docName, t.cipher, t.assignee, t.workName,
+      t.startDate, t.endDate, t.hoursTotal, (t.hoursTotal / 8).toFixed(1), t.status,
     ]);
     const csv = [headers, ...rows].map(r => r.join(';')).join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `planflow-export-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `документация-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -131,19 +129,15 @@ export default function Index() {
             )}
 
             {(activeTab === 'table' || activeTab === 'gantt') && (
-              <div className="flex items-center gap-2">
-                <select
-                  className="h-7 text-[11px] border border-border rounded px-2 bg-background text-foreground outline-none focus:ring-1 focus:ring-primary"
-                  value={settings.groupBy}
-                  onChange={e => setSettings(s => ({ ...s, groupBy: e.target.value }))}
-                >
-                  <option value="">Без группировки</option>
-                  <option value="group">По группе</option>
-                  <option value="assignee">По исполнителю</option>
-                  <option value="status">По статусу</option>
-                  <option value="priority">По приоритету</option>
-                </select>
-              </div>
+              <select
+                className="h-7 text-[11px] border border-border rounded px-2 bg-background text-foreground outline-none focus:ring-1 focus:ring-primary"
+                value={settings.groupBy}
+                onChange={e => setSettings(s => ({ ...s, groupBy: e.target.value }))}
+              >
+                <option value="">Без группировки</option>
+                <option value="assignee">По исполнителю</option>
+                <option value="status">По статусу</option>
+              </select>
             )}
 
             <div className="text-[11px] mono text-muted-foreground">
@@ -185,7 +179,11 @@ export default function Index() {
       </div>
 
       {showAddModal && (
-        <AddTaskModal onAdd={handleAdd} onClose={() => setShowAddModal(false)} />
+        <AddTaskModal
+          tasksCount={tasks.length}
+          onAdd={handleAdd}
+          onClose={() => setShowAddModal(false)}
+        />
       )}
     </div>
   );
